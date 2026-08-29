@@ -1,0 +1,321 @@
+:root {
+  --bg: #10141b;
+  --panel: #171c25;
+  --panel-raised: #1d2330;
+  --border: #2a3140;
+  --text: #e8ecf3;
+  --muted: #8891a3;
+  --accent: #4fb0ff;
+  --safe: #2dd4a7;
+  --medium: #f2c14e;
+  --high: #f2884e;
+  --critical: #ef4d5e;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(79, 176, 255, 0.06), transparent 40%),
+    radial-gradient(circle at 85% 100%, rgba(239, 77, 94, 0.05), transparent 40%);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.app {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+.app__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.app__mark {
+  font-size: 28px;
+  color: var(--accent);
+  line-height: 1;
+  padding-top: 4px;
+}
+
+.app__header h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+}
+
+.app__header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.console {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 820px) {
+  .console { grid-template-columns: 1fr; }
+}
+
+.console__panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 24px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.tabs__item {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 8px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tabs__item.is-active {
+  background: var(--panel-raised);
+  color: var(--text);
+}
+
+.field {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.field--textarea { resize: vertical; }
+
+.field:focus, .dropzone:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 96px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 12px;
+}
+
+.dropzone input { display: none; }
+
+.submit-btn {
+  background: var(--accent);
+  color: #0a1420;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.submit-btn:disabled {
+  background: var(--border);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.error-text {
+  color: var(--critical);
+  font-size: 13px;
+  margin: 0;
+}
+
+.console__output { min-height: 400px; }
+
+.empty-state {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  padding: 60px 20px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.report-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  animation: card-in 0.3s ease-out;
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.report-card__scanline {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  top: 0;
+  animation: scan 0.9s ease-out forwards;
+  opacity: 0.8;
+}
+
+@keyframes scan {
+  from { top: 0; }
+  to { top: 100%; }
+}
+
+.report-card__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.report-card__header h2 {
+  font-family: var(--font-display);
+  margin: 6px 0 12px;
+  font-size: 22px;
+}
+
+.report-card__input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0 0 20px;
+}
+
+.risk-meter { margin-bottom: 24px; }
+
+.risk-meter__segments {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.risk-meter__segment {
+  height: 8px;
+  border-radius: 3px;
+  background: var(--border);
+}
+
+.risk-meter__segment.is-filled { background: var(--panel-raised); }
+
+.risk-meter__segment.is-active.risk-low { background: var(--safe); }
+.risk-meter__segment.is-active.risk-medium { background: var(--medium); }
+.risk-meter__segment.is-active.risk-high { background: var(--high); }
+.risk-meter__segment.is-active.risk-critical {
+  background: var(--critical);
+  box-shadow: 0 0 12px var(--critical);
+}
+
+.risk-meter__labels {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.risk-meter__labels .is-active { color: var(--text); }
+
+.risk-meter__score {
+  font-family: var(--font-display);
+  font-size: 32px;
+  margin-top: 10px;
+}
+
+.risk-meter__score span {
+  font-size: 14px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.risk-meter__score.risk-low { color: var(--safe); }
+.risk-meter__score.risk-medium { color: var(--medium); }
+.risk-meter__score.risk-high { color: var(--high); }
+.risk-meter__score.risk-critical { color: var(--critical); }
+
+.report-card__section { margin-bottom: 18px; }
+
+.report-card__section h3,
+.report-card__action h3 {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+
+.report-card__section ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.report-card__section p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--text); }
+
+.report-card__action {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.report-card__action p { color: var(--text); }
