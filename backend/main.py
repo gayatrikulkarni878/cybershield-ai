@@ -49,41 +49,78 @@ def build_url_report(raw_url: str) -> ThreatReport:
     )
 
 
-@app.post("/analyze/url", response_model=ThreatReport)
-def analyze_url(payload: URLRequest):
-    return build_url_report(payload.url)
+@app.post("/api/analyze/url")
+async def analyze_url(request: dict):
+    """Analyze URL with error handling"""
+    try:
+        url = request.get("url", "").strip()
+
+        if not url:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "URL cannot be empty",
+                    "code": "EMPTY_INPUT"
+                }
+            )
+
+        if len(url) > 2048:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "URL too long (max 2048 chars)",
+                    "code": "URL_TOO_LONG"
+                }
+            )
+
+        result = url_detector.analyze(url)
+        return {"success": True, "data": result}
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": f"Analysis failed: {str(e)}",
+                "code": "ANALYSIS_ERROR"
+            }
+        )
 
 
-@app.post("/analyze/message", response_model=ThreatReport)
-def analyze_message(payload: MessageRequest):
-    score, indicators, embedded_url = message_detector.score_message(payload.text)
-    level = message_detector.classify_score(score)
+@app.post("/api/analyze/message")
+async def analyze_message(request: dict):
+    """Analyze message with error handling"""
+    try:
+        message = request.get("message", "").strip()
 
-    # If the message contains a URL, factor its own risk score in too
-    if embedded_url:
-        url_score, url_indicators = url_detector.score_url(embedded_url)
-        score = min(100, max(score, int(0.6 * score + 0.4 * url_score)))
-        indicators.extend([f"[link] {i}" for i in url_indicators])
-        level = message_detector.classify_score(score)
+        if not message:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "Message cannot be empty",
+                    "code": "EMPTY_INPUT"
+                }
+            )
 
-    return ThreatReport(
-        input_type="message",
-        input_value=payload.text,
-        risk_level=level,
-        risk_score=score,
-        threat_type="Phishing / Social Engineering" if score >= 20 else "No significant threat",
-        indicators=indicators,
-        explanation=(
-            f"This message was scored {score}/100 based on {len(indicators)} manipulation "
-            f"and/or technical indicator(s) commonly used in scam messages."
-        ),
-        recommended_action=(
-            "Do not click any links or share OTPs, passwords, or account details from this "
-            "message. Contact the organisation directly using its official app or website."
-            if score >= 20
-            else "No major red flags found, but stay cautious with unexpected messages."
-        ),
-    )
+        if len(message) < 5:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "Message too short (min 5 chars)",
+                    "code": "MESSAGE_TOO_SHORT"
+                }
+            )
+
+        result = message_detector.analyze(message)
+        return {"success": True, "data": result}
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": f"Analysis failed: {str(e)}",
+                "code": "ANALYSIS_ERROR"
+            }
+        )
 
 
 @app.post("/analyze/qr", response_model=ThreatReport)
@@ -114,6 +151,7 @@ async def analyze_qr(file: UploadFile = File(...)):
     )
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+@app.get("/api/health")
+async def health():
+    """Health check endpoint"""
+    return {"status": "healthy", "version": "2.0"}

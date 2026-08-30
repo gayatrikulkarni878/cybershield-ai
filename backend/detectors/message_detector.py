@@ -1,67 +1,212 @@
-"""
-Heuristic phishing / social-engineering message detector.
-
-Same idea as url_detector: rule-based today so the demo is fast and fully
-explainable, structured so you can later add an LLM call (Claude API) or a
-trained TF-IDF + Logistic Regression classifier on an SMS-spam dataset
-without changing the calling code.
-"""
+from typing import Dict, List
 import re
 
-URGENCY_WORDS = ["immediately", "urgent", "right away", "within 24 hours", "act now", "expire", "last chance"]
-THREAT_WORDS = ["suspended", "blocked", "locked", "deactivated", "legal action", "penalty", "fine"]
-REWARD_WORDS = ["congratulations", "winner", "won", "reward", "prize", "cashback", "free gift", "lottery"]
-SENSITIVE_REQUESTS = ["otp", "password", "pin", "cvv", "card number", "aadhar", "bank details", "login details"]
-URL_PATTERN = re.compile(r"(https?://\S+|www\.\S+|\b\S+\.(com|in|net|org|xyz|info)\b)", re.IGNORECASE)
 
+class AdvancedPhishingDetector:
+    """Enhanced phishing detection with multilingual support"""
 
-def score_message(text: str):
-    indicators = []
-    score = 0
-    t = text.lower()
+    def __init__(self):
+        self.patterns = {
+            'urgency': {
+                'words': [
+                    'immediately', 'urgent', 'asap', 'now', 'hurry',
+                    'quickly', 'act now', 'limited time', 'deadline',
+                    "don't wait", 'right now'
+                ],
+                'weight': 15
+            },
 
-    urgency_hits = [w for w in URGENCY_WORDS if w in t]
-    if urgency_hits:
-        score += 20
-        indicators.append(f"Creates urgency ('{urgency_hits[0]}')")
+            'fear': {
+                'words': [
+                    'blocked', 'suspended', 'restricted', 'closed',
+                    'locked', 'freeze', 'danger', 'hack', 'fraud',
+                    'unauthorized', 'security alert', 'warning', 'compromise'
+                ],
+                'weight': 20
+            },
 
-    threat_hits = [w for w in THREAT_WORDS if w in t]
-    if threat_hits:
-        score += 20
-        indicators.append(f"Uses a threat of consequence ('{threat_hits[0]}')")
+            'reward': {
+                'words': [
+                    'won', 'prize', 'reward', 'gift', 'free', 'bonus',
+                    'congratulations', 'lucky', 'selected', 'claim',
+                    'cashback', 'refund', 'money', 'earn'
+                ],
+                'weight': 18
+            },
 
-    reward_hits = [w for w in REWARD_WORDS if w in t]
-    if reward_hits:
-        score += 20
-        indicators.append(f"Offers an unexpected reward ('{reward_hits[0]}')")
+            'sensitive': {
+                'words': [
+                    'password', 'pin', 'otp', 'cvv', 'card number',
+                    'credit card', 'debit card', 'aadhaar', 'pan',
+                    'ssn', 'account number', 'ifsc'
+                ],
+                'weight': 25
+            },
 
-    sensitive_hits = [w for w in SENSITIVE_REQUESTS if w in t]
-    if sensitive_hits:
-        score += 25
-        indicators.append(f"Requests sensitive information ('{sensitive_hits[0]}')")
+            'actions': {
+                'words': [
+                    'click here', 'click link', 'verify account',
+                    'confirm identity', 'update password', 'reset password',
+                    'open attachment', 'download file'
+                ],
+                'weight': 20
+            }
+        }
 
-    url_match = URL_PATTERN.search(text)
-    if url_match:
-        score += 15
-        indicators.append("Contains a link the reader is pressured to click")
+        self.hindi_patterns = {
+            'urgency': {
+                'words': [
+                    'तुरंत', 'आपातकालीन', 'अभी', 'जल्दी', 'देरी न करें'
+                ],
+                'weight': 15
+            },
 
-    if re.search(r"dear (customer|user|sir/madam)", t):
-        score += 5
-        indicators.append("Uses a generic greeting instead of your real name")
+            'fear': {
+                'words': [
+                    'ब्लॉक', 'निलंबित', 'खतरा', 'धोखा', 'चेतावनी'
+                ],
+                'weight': 20
+            },
 
-    score = min(score, 100)
-    if not indicators:
-        indicators.append("No common social-engineering patterns detected")
+            'reward': {
+                'words': [
+                    'जीता', 'पुरस्कार', 'उपहार', 'मुफ्त', 'बोनस'
+                ],
+                'weight': 18
+            }
+        }
 
-    embedded_url = url_match.group(0) if url_match else None
-    return score, indicators, embedded_url
+    def analyze(self, message: str) -> Dict:
+        """Comprehensive phishing analysis"""
 
+        score = 0
+        indicators = []
+        threat_type = "Unknown"
+        message_lower = message.lower()
 
-def classify_score(score: int):
-    if score >= 70:
-        return "CRITICAL"
-    if score >= 45:
-        return "HIGH"
-    if score >= 20:
-        return "MEDIUM"
-    return "LOW"
+        language = self._detect_language(message)
+        patterns = self.hindi_patterns if language == 'hindi' else self.patterns
+
+        for category, pattern_data in patterns.items():
+            matches = sum(
+                1 for word in pattern_data['words']
+                if word in message_lower
+            )
+
+            if matches > 0:
+                category_name = category.upper()
+                indicators.append(
+                    f"⚠️ {category_name}: {matches} indicator(s)"
+                )
+                score += pattern_data['weight'] * matches
+
+                if 'fear' in category:
+                    threat_type = "Account Takeover Scam"
+                elif 'reward' in category:
+                    threat_type = "Prize/Reward Scam"
+                elif 'sensitive' in category:
+                    threat_type = "Identity Theft"
+
+        links = re.findall(r'https?://\S+', message)
+
+        if links:
+            indicators.append(f"🔗 Contains {len(links)} link(s)")
+            score += 12 * len(links)
+
+        impersonate_words = ['from', 'behalf', 'verified by', 'official']
+
+        if any(word in message_lower for word in impersonate_words):
+            indicators.append("🚨 Possible impersonation")
+            score += 15
+
+        if len(message) < 15:
+            indicators.append("⚠️ Very short message (automated scam)")
+            score += 8
+
+        elif len(message) > 500:
+            indicators.append("⚠️ Suspiciously long message")
+            score += 5
+
+        score = min(score, 100)
+        risk_level = self._get_risk_level(score)
+
+        return {
+            'message': message[:150],
+            'risk_level': risk_level,
+            'risk_score': score,
+            'threat_type': (
+                threat_type
+                if threat_type != "Unknown"
+                else "Phishing/Social Engineering"
+            ),
+            'indicators': indicators,
+            'language_detected': language,
+            'explanation': self._generate_explanation(indicators),
+            'recommendation': self._get_recommendation(score),
+            'links_found': len(links)
+        }
+
+    def _detect_language(self, text: str) -> str:
+        """Detect if message is Hindi or English"""
+
+        hindi_chars = re.findall(r'[\u0900-\u097F]', text)
+
+        return (
+            'hindi'
+            if len(hindi_chars) > len(text) * 0.3
+            else 'english'
+        )
+
+    def _get_risk_level(self, score: int) -> str:
+
+        if score >= 85:
+            return "CRITICAL 🔴"
+
+        elif score >= 65:
+            return "HIGH 🟠"
+
+        elif score >= 40:
+            return "MEDIUM 🟡"
+
+        elif score >= 20:
+            return "LOW 🟢"
+
+        else:
+            return "SAFE ✅"
+
+    def _generate_explanation(self, indicators: List[str]) -> str:
+
+        if not indicators:
+            return (
+                "This message does not show typical phishing characteristics."
+            )
+
+        return " | ".join(indicators)
+
+    def _get_recommendation(self, score: int) -> str:
+
+        if score >= 85:
+            return (
+                "🚨 DANGER: Likely scam. DO NOT click links or reply. "
+                "Delete immediately."
+            )
+
+        elif score >= 65:
+            return (
+                "⚠️ WARNING: Suspicious message. Do not click links "
+                "or provide information."
+            )
+
+        elif score >= 40:
+            return (
+                "⚡ CAUTION: Message has warning signs. "
+                "Verify the sender independently."
+            )
+
+        elif score >= 20:
+            return (
+                "✓ Minor concerns. Be cautious but may be legitimate."
+            )
+
+        else:
+            return "✅ Appears safe based on content analysis."
