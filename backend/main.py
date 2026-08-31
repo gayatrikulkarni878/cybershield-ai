@@ -1,10 +1,14 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from urllib.parse import urlparse
 
 from schemas import ThreatReport, URLRequest, MessageRequest
 from detectors import url_detector, message_detector, qr_detector, reputation
+
+url_detector_engine = url_detector.AdvancedURLDetector()
+message_detector_engine = message_detector.AdvancedPhishingDetector()
 
 app = FastAPI(title="CyberShield AI", version="0.1.0")
 
@@ -73,7 +77,7 @@ async def analyze_url(request: dict):
                 }
             )
 
-        result = url_detector.analyze(url)
+        result = url_detector_engine.analyze(url)
         return {"success": True, "data": result}
 
     except Exception as e:
@@ -110,7 +114,7 @@ async def analyze_message(request: dict):
                 }
             )
 
-        result = message_detector.analyze(message)
+        result = message_detector_engine.analyze(message)
         return {"success": True, "data": result}
 
     except Exception as e:
