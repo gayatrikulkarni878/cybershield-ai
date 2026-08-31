@@ -54,27 +54,88 @@ class AdvancedPhishingDetector:
         }
 
         self.hindi_patterns = {
-            'urgency': {
-                'words': [
-                    'तुरंत', 'आपातकालीन', 'अभी', 'जल्दी', 'देरी न करें'
-                ],
-                'weight': 15
-            },
+    'urgency': {
+        'words': [
+            'तुरंत', 'आपातकालीन', 'अभी', 'जल्दी', 'देरी न करें',
+            'फौरन', 'अभी तुरंत'
+        ],
+        'weight': 15
+    },
 
-            'fear': {
-                'words': [
-                    'ब्लॉक', 'निलंबित', 'खतरा', 'धोखा', 'चेतावनी'
-                ],
-                'weight': 20
-            },
+    'fear': {
+        'words': [
+            'ब्लॉक', 'निलंबित', 'खतरा', 'धोखा', 'चेतावनी',
+            'बंद', 'लॉक', 'प्रतिबंधित'
+        ],
+        'weight': 20
+    },
 
-            'reward': {
-                'words': [
-                    'जीता', 'पुरस्कार', 'उपहार', 'मुफ्त', 'बोनस'
-                ],
-                'weight': 18
-            }
-        }
+    'reward': {
+        'words': [
+            'जीता', 'पुरस्कार', 'उपहार', 'मुफ्त', 'बोनस',
+            'इनाम', 'पैसे'
+        ],
+        'weight': 18
+    },
+
+    'sensitive': {
+        'words': [
+            'पासवर्ड', 'पिन', 'ओटीपी', 'सीवीवी', 'खाता नंबर',
+            'बैंक खाता', 'आधार', 'पैन'
+        ],
+        'weight': 25
+    },
+
+    'actions': {
+        'words': [
+            'क्लिक करें', 'सत्यापित करें', 'पुष्टि करें',
+            'खाता अपडेट करें', 'जानकारी अपडेट करें'
+        ],
+        'weight': 20
+    }
+}
+
+self.marathi_patterns = {
+    'urgency': {
+        'words': [
+            'तातडीने', 'त्वरित', 'लगेच', 'तातडीचा', 'त्वरा करा',
+            'विलंब करू नका'
+        ],
+        'weight': 15
+    },
+
+    'fear': {
+        'words': [
+            'ब्लॉक', 'बंद', 'धोका', 'फसवणूक', 'चेतावणी',
+            'निलंबित', 'धोकादायक'
+        ],
+        'weight': 20
+    },
+
+    'reward': {
+        'words': [
+            'जिंकले', 'बक्षीस', 'मोफत', 'बोनस', 'पारितोषिक',
+            'पैसे', 'परतावा'
+        ],
+        'weight': 18
+    },
+
+    'sensitive': {
+        'words': [
+            'पासवर्ड', 'पिन', 'ओटीपी', 'सीव्हीव्ही', 'खाते क्रमांक',
+            'बँक खाते', 'आधार', 'पॅन'
+        ],
+        'weight': 25
+    },
+
+    'actions': {
+        'words': [
+            'क्लिक करा', 'सत्यापित करा', 'पुष्टी करा',
+            'खाते अपडेट करा', 'माहिती अपडेट करा'
+        ],
+        'weight': 20
+    }
+}
 
     def analyze(self, message: str) -> Dict:
         """Comprehensive phishing analysis"""
@@ -85,7 +146,13 @@ class AdvancedPhishingDetector:
         message_lower = message.lower()
 
         language = self._detect_language(message)
-        patterns = self.hindi_patterns if language == 'hindi' else self.patterns
+
+        if language == 'marathi':
+             patterns = self.marathi_patterns
+        elif language == 'hindi':
+             patterns = self.hindi_patterns
+        else:
+             patterns = self.patterns
 
         for category, pattern_data in patterns.items():
             matches = sum(
@@ -147,15 +214,37 @@ class AdvancedPhishingDetector:
         }
 
     def _detect_language(self, text: str) -> str:
-        """Detect if message is Hindi or English"""
+    """Detect English, Hindi or Marathi"""
 
-        hindi_chars = re.findall(r'[\u0900-\u097F]', text)
+    text_lower = text.lower()
 
-        return (
-            'hindi'
-            if len(hindi_chars) > len(text) * 0.3
-            else 'english'
-        )
+    marathi_words = [
+        'आहे', 'तुमचे', 'तुमची', 'करा', 'त्वरित',
+        'खाते', 'माहिती', 'पासून', 'साठी', 'नाही',
+        'तातडीने', 'लगेच', 'वाचण्यासाठी'
+    ]
+
+    hindi_words = [
+        'है', 'आपका', 'आपकी', 'करें', 'तुरंत',
+        'खाता', 'जानकारी', 'से', 'लिए', 'नहीं',
+        'अभी', 'जल्दी'
+    ]
+
+    marathi_matches = sum(word in text_lower for word in marathi_words)
+    hindi_matches = sum(word in text_lower for word in hindi_words)
+
+    if marathi_matches > hindi_matches and marathi_matches > 0:
+        return 'marathi'
+
+    if hindi_matches > 0:
+        return 'hindi'
+
+    hindi_chars = re.findall(r'[\u0900-\u097F]', text)
+
+    if len(hindi_chars) > len(text) * 0.3:
+        return 'hindi'
+
+    return 'english'
 
     def _get_risk_level(self, score: int) -> str:
 
